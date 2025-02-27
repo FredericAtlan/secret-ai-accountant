@@ -1,1 +1,1 @@
-# secret-ai-accountant
+# secret_ai_accountant
