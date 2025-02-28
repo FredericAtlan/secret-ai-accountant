@@ -160,7 +160,7 @@ const AuditorScreen: React.FC = () => {
 
       
        {/* Automatic Secured Ledger Section */}
-       <section className="bg-white p-6 rounded-lg shadow-md w-full max-w-6xl mb-6">
+       <section className="bg-white p-6 rounded-lg shadow-md w-full max-w-6xl mb-0">
           <h2 className="text-xl font-bold mb-4">Automatic Secured Ledger</h2>
           
           <div className="flex flex-wrap  items-center justify-between mb-4">
