@@ -1,191 +1,114 @@
-import React, { useState } from 'react'
-import FileUpload from './FileUpload'
-import PDFViewer from './PDFViewer'
-import ocrService from './OCRService'
-import logo from './assets/luxury-real-estate-logo.png' // Make sure this path is correct
+import React, { useState, useRef } from 'react';
+import ocrService from './OCRService';
+
+// Import assets
+import logo from './assets/Company_11.svg';
+import avatar from './assets/Company_avatar.svg';
+import fingerprintScanner from './assets/Fingerprint_scaner-1.svg';
+import fingerprintScanner2 from './assets/Fingerprint_scaner-2.svg';
 import {
-  User,
-  LogOut,
-  Wallet,
-  FileUp,
-  FileSearch,
-  Fingerprint,
-  FileText,
-  Edit,
-  CheckCircle,
-  XCircle,
-  FileSignature,
-  Share2,
-  RotateCcw,
-  Copy,
-} from 'lucide-react'
+  Wallet, FileUp, FileSearch, FileText, Edit, CheckCircle, XCircle,
+  FileSignature, Share2, RotateCcw, Copy, ChevronDown, Bell, Download, UploadCloud, Trash
+} from 'lucide-react';
 
-const apiInvoiceUrl = 'http://localhost:5000/api/invoice'
-const apiCredibilityUrl = 'http://localhost:5000/api/credibility'
-
+// Interface pour l'API
 interface ApiResponse {
-  invoice_number: string
-  date: string
-  client_name: string
-  type: string
-  total_amount: number
-  tax_amount: number
-  currency: string
+  invoice_number: string;
+  date: string;
+  client_name: string;
+  type: string;
+  total_amount: number;
+  tax_amount: number;
+  currency: string;
 }
 
 const CompanyScreen: React.FC = () => {
-  const [pdfText, setPdfText] = useState('')
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
-  const [apiResponse, setApiResponse] = useState<ApiResponse | null>(null)
-  const [credibilityScore, setCredibilityScore] = useState<number | null>(null)
-  const [documentName, setDocumentName] = useState('')
-  const [fingerprint, setFingerprint] = useState('')
-  const [ocrResults, setOcrResults] = useState('')
-  const [isUploading, setIsUploading] = useState(false) // State for upload progress
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [documentName, setDocumentName] = useState('');
+  const [fingerprint, setFingerprint] = useState('');
+  const [ocrResults, setOcrResults] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
 
+  // Gère le scroll horizontal avec Shift + Molette
+  const handleScroll = (event: React.WheelEvent<HTMLDivElement>) => {
+    if (event.shiftKey && scrollContainerRef.current) {
+      event.preventDefault();
+      scrollContainerRef.current.scrollLeft += event.deltaY * 2;
+    }
+  };
+
+  // Gère l'upload du fichier
   const handleFileChange = (file: File) => {
-    setUploadedFile(file)
-    setDocumentName(file.name)
-    setIsUploading(true) // Start upload process
-    // Simulate upload completion after a delay (replace with actual upload logic)
+    setUploadedFile(file);
+    setDocumentName(file.name);
+    setIsUploading(true);
     setTimeout(() => {
-      setIsUploading(false)
-    }, 2000)
-  }
+      setIsUploading(false);
+    }, 2000);
+  };
 
+  // Extraction du texte du PDF via OCR
   const extractText = async () => {
-    if (!uploadedFile) return
+    if (!uploadedFile) return;
     try {
-      const text = await ocrService.extractTextFromPDF(uploadedFile)
-      setPdfText(text)
-      setOcrResults(text)
+      const text = await ocrService.extractTextFromPDF(uploadedFile);
+      setOcrResults(text);
     } catch (error) {
-      console.error('Error extracting text:', error)
+      console.error('Error extracting text:', error);
     }
-  }
-
-  const callApi = async () => {
-    if (!pdfText) return
-    try {
-      const response = await fetch(apiInvoiceUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          data: pdfText,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Network response was not ok')
-      }
-
-      const result: ApiResponse = await response.json()
-      setApiResponse(result)
-      if (result) {
-        setFingerprint('fakehash' + result.invoice_number) // Example hash
-      }
-    } catch (error) {
-      console.error('Error calling API:', error)
-    }
-  }
-
-  const callCredibilityApi = async () => {
-    if (!pdfText || !apiResponse) return
-    try {
-      const response = await fetch(apiCredibilityUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          invoice: pdfText,
-          accounting_row: apiResponse,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Network response was not ok')
-      }
-
-      const result = await response.json()
-      setCredibilityScore(result.credibility)
-    } catch (error) {
-      console.error('Error calling credibility API:', error)
-    }
-  }
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    field: keyof ApiResponse
-  ) => {
-    if (apiResponse) {
-      setApiResponse({
-        ...apiResponse,
-        [field]: e.target.value,
-      })
-    }
-  }
-
-    const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-  }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
-      {/* Sidebar */}
-      <aside className="bg-gray-800 text-white w-64 p-4">
-        <div className="flex items-center mb-6">
-          <span className="text-xl font-bold">S Tool Name</span>
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center p-6">
+      {/* Barre du haut */}
+      <div className="bg-white p-4 rounded-md shadow-md w-full max-w-6xl flex justify-between items-center mb-6">
+        <div className="flex items-center">
+          <img src={logo} alt="Company Logo" className="h-20 w-auto mr-4" />
+          <div className="bg-white rounded-lg p-1 text-center">
+            <div className="text-gray-900 px-2">Luxury Real Estate</div>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-1 text-center">
+            <div className="text-gray-900 text-xs">Global Credibility Score</div>
+            <div className="text-lg font-bold text-green-500">87%</div>
+          </div>
         </div>
-        <ul>
-          <li className="mb-2">
-            <a href="#" className="flex items-center text-white font-bold">
-              <span className="mr-2">
-                <User />
-              </span>
-              Company Screen
-            </a>
-          </li>
-          <li className="mb-2">
-            <a href="/auditor" className="flex items-center text-gray-300 hover:text-white">
-              <span className="mr-2">
-                <LogOut />
-              </span>
-              Auditor Screen
-            </a>
-          </li>
-        </ul>
-      </aside>
+        <div className="flex items-center space-x-4">
+          <span className="text-lg font-semibold">Oscar Davis</span>
+          <img src={avatar} alt="User Avatar" className="w-20 h-20 rounded-full" />
+          <ChevronDown className="w-6 h-6 text-gray-800 cursor-pointer transition-transform duration-200 hover:rotate-180" />
+          <div className="relative">
+            <Bell className="w-10 h-10 text-gray-800" />
+            <span className="absolute top-0 right-0 bg-red-500 text-white rounded-full text-xs px-1">3</span>
+          </div>
+          <button className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full flex items-center">
+            <Wallet className="mr-2" />
+            Wallet
+          </button>
+        </div>
+      </div>
 
-      {/* Main Content */}
-      <main className="flex-1 p-8">
-        {/* Top Bar */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center">
-            <img src={logo} alt="Company Logo" className="h-16 w-auto mr-4" /> {/* Increased logo size */}
-            <div className="bg-gray-200 p-2 rounded-md">
-              Global Credibility Score: <span className="font-bold text-green-500">87%</span>
-            </div>
-          </div>
-          <div className="flex items-center">
-            <span className="mr-4">Oscar Davis</span>
-            <button className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full flex items-center">
-              <Wallet className="mr-2" />
-              Wallet
-            </button>
-          </div>
-        </div>
+
 
         {/* Upload Document Section */}
-        <section className="bg-white p-6 rounded-lg shadow-md mb-8">
+        <section className="bg-white p-6 rounded-lg shadow-md w-full max-w-6xl mb-6">
           <h2 className="text-xl font-bold mb-4">Upload Document</h2>
-          <div className="grid grid-cols-2 gap-8">
-            <div>
-              <FileUpload onFileChange={handleFileChange} />
+          <div className="grid grid-cols-4 gap-8">
+            <div className="col-span-1 flex flex-col items-center justify-center space-y-4">
+              <button
+                onClick={() => document.getElementById('file-upload')?.click()}
+                className="bg-blue-500 hover:bg-blue-600 text-white font-regular py-2 px-1 rounded inline-flex items-center transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95">
+                <FileUp className="mr-2" />
+                Upload doc.
+              </button>
+              <input
+                id="file-upload"
+                type="file"
+                className="hidden"
+                onChange={(e) => e.target.files && handleFileChange(e.target.files[0])}
+              />
               {isUploading && (
-                <div className="mt-2">
+                <div className="flex items-center mt-2">
                   <RotateCcw className="animate-spin h-5 w-5 text-blue-500" />
                   <span className="ml-2 text-gray-600">Uploading...</span>
                 </div>
@@ -193,14 +116,13 @@ const CompanyScreen: React.FC = () => {
               {uploadedFile && (
                 <button
                   onClick={extractText}
-                  className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mt-4 flex items-center"
-                >
-                  <FileUp className="mr-2" />
-                  Extract and View
+                  className="bg-blue-500 hover:bg-blue-600 text-white ffont-regular py-2 px-1 rounded inline-flex items-center transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95">
+                  <FileSearch className="mr-2" />
+                  View doc.
                 </button>
               )}
             </div>
-            <div>
+            <div className="col-span-3">
               <div className="mb-4">
                 <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="document">
                   Document
@@ -219,6 +141,18 @@ const CompanyScreen: React.FC = () => {
                   </div>
                 </div>
               </div>
+             
+
+
+            </div>
+            </div>
+            <div className="flex items-center justify-center bg-white p-0.5 rounded-lg mb-8">
+            </div>
+          <div className="grid grid-cols-4 gap-8">
+            <div className="col-span-1 flex justify-center items-center">
+              <img src={fingerprintScanner} alt="finger-icon" className="h-16 w-auto mr-4" /> {/* Updated logo */}
+            </div>
+            <div className="col-span-3">
               <div className="mb-4">
                 <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="fingerprint">
                   Fingerprint
@@ -234,17 +168,35 @@ const CompanyScreen: React.FC = () => {
                   />
                   <button
                     onClick={() => copyToClipboard(fingerprint)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3"
-                  >
+                    className="absolute inset-y-0 right-0 flex items-center pr-3">
                     <Copy className="h-5 w-5 text-gray-400" />
                   </button>
                 </div>
               </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="ocr">
+            </div>
+          </div>
+
+          <div className="grid grid-cols-4 gap-8">
+            <div className="col-span-1 flex justify-center items-center">
+              <img src={fingerprintScanner2} alt="OCR icon" className="h-16 w-auto mr-4" /> {/* Updated logo */}
+            
+   
+            
+            </div>
+            
+            <div className="col-span-3">
+              <div className="mb-3">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-gray-700 text-sm font-bold" htmlFor="ocr">
                   OCR
-                </label>
-                <div className="relative">
+                  </label>
+                  <div className="w-1/4 bg-gray-200 rounded-full h-2">
+                  <div className="bg-blue-600 h-2 rounded-full" style={{ width: '50%' }}></div>
+                  </div>
+                </div>
+
+                
+                <div className="relative flex items-center">
                   <textarea
                     id="ocr"
                     value={ocrResults}
@@ -255,113 +207,103 @@ const CompanyScreen: React.FC = () => {
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none top-0">
                     <FileText className="h-5 w-5 text-gray-400" />
                   </div>
+ 
                 </div>
               </div>
             </div>
           </div>
-        </section>
-
-        {/* Automatic Secured Ledger Section */}
-        <section className="bg-white p-6 rounded-lg shadow-md">
+      </section>
+      
+       {/* Automatic Secured Ledger Section */}
+       <section className="bg-white p-6 rounded-lg shadow-md w-full max-w-6xl mb-6">
           <h2 className="text-xl font-bold mb-4">Automatic Secured Ledger</h2>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <button className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center mr-2">
-                <Edit className="mr-2" />
-                Edit
-              </button>
-              <button className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center mr-2">
-                <CheckCircle className="mr-2" />
-                Approve
-              </button>
-              <button className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center mr-2">
-                <XCircle className="mr-2" />
-                Delete line
-              </button>
-              <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center mr-2">
-                <FileSignature className="mr-2" />
-                SEAL in BC
-              </button>
-              <button className="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded inline-flex items-center">
-                <Share2 className="mr-2" />
-                Share with Auditor
-              </button>
-            </div>
-          </div>
+          
+          <div className="flex flex-wrap  items-center justify-between mb-4">
+  <div className="flex items-center space-x-2">
+    <button className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-regular py-2 px-1 rounded inline-flex items-center transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95">
+      <Edit className="mr-2" />
+      Edit
+    </button>
+    <button className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-regular py-2 px-1 rounded inline-flex items-center transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95">
+      <CheckCircle className="mr-2" />
+      Approve
+    </button>
+    <button className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-regular py-2 px-1 rounded inline-flex items-center transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95">
+      <XCircle className="mr-2" />
+      Delete line
+    </button>
 
-          {/* Ledger Table */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full leading-normal">
-              <thead>
-                <tr>
-                  <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Selection
-                  </th>
-                  <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Company Wallet
-                  </th>
-                  <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Accounting Line ID
-                  </th>
-                  <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Ref.
-                  </th>
-                  <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Supplier
-                  </th>
-                  <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Description
-                  </th>
-                  <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Amount (Excl. Tax)
-                  </th>
-                  <th className="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Credibility
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {apiResponse && (
-                  <tr className="hover:bg-gray-100">
-                    <td className="px-5 py-4 border-b border-gray-200 bg-white text-sm">
-                      <input type="checkbox" className="form-checkbox" />
-                    </td>
-                    <td className="px-5 py-4 border-b border-gray-200 bg-white text-sm">
-                      Wallet
-                    </td>
-                    <td className="px-5 py-4 border-b border-gray-200 bg-white text-sm">
-                      {apiResponse.invoice_number}
-                    </td>
-                    <td className="px-5 py-4 border-b border-gray-200 bg-white text-sm">
-                      {apiResponse.date}
-                    </td>
-                    <td className="px-5 py-4 border-b border-gray-200 bg-white text-sm">
-                      FA-001
-                    </td>
-                    <td className="px-5 py-4 border-b border-gray-200 bg-white text-sm">
-                      {apiResponse.client_name}
-                    </td>
-                    <td className="px-5 py-4 border-b border-gray-200 bg-white text-sm">
-                      {apiResponse.type}
-                    </td>
-                    <td className="px-5 py-4 border-b border-gray-200 bg-white text-sm">
-                      {apiResponse.total_amount}
-                    </td>
-                    <td className="px-5 py-4 border-b border-gray-200 bg-white text-sm">
-                      {credibilityScore ? `${credibilityScore}%` : '-'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </main>
+    {/* SEAL in BC with Progress Loaders Below */}
+    <div className="flex flex-wrap flex-col items-center">
+      <button className="bg-blue-600 hover:bg-blue-700 text-white font-regular py-2 px-1 rounded inline-flex items-center transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95">
+        <FileSignature className="mr-2" />
+        SEAL in BC
+      </button>
+
+      {/* Rolling Progress Indicators */}
+      <div className="flex flex-wrap space-x-2 mt-2">
+      {true && (
+              <RotateCcw className="animate-spin h-7 w-7 text-blue-500" />
+              )}      </div>
     </div>
-  )
-}
 
-export default CompanyScreen
+    <button className="bg-purple-500 hover:bg-purple-600 text-white font-regular py-2 px-1 rounded inline-flex items-center transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95">
+      <Share2 className="mr-2" />
+      Share with Auditor
+    </button>
+
+    <div className="flex flex-wrap  items-center ml-auto">
+      {/* AI LLM Icon & Dynamic Credibility Score */}
+      <img src="/src/assets/Ai_LLM.svg" alt="AI LLM" className="h-16 w-auto ml-20" />
+      <span className="text-xl font-bold text-yellow-600 ml-2">
+      54% {/* This value should be dynamically updated */}
+      </span>
+    </div>
+  </div>
+</div>
+      </section>
+
+      {/* Ledger Table avec Scroll Horizontal */}
+      <section className="bg-white p-1 rounded-lg shadow-md w-full max-w-6xl">
+        <h2 className="text-xl font-bold mb-6"></h2>
+        <div ref={scrollContainerRef} onWheel={handleScroll} className="overflow-x-auto border border-gray-300 rounded-lg shadow-sm">
+          <table className="min-w-max border-collapse">
+            <thead className="bg-gray-100 sticky top-0 z-10 shadow-md">
+              <tr>
+                {[
+                  "Selection", "Company Wallet", "Accounting Line ID", "Date", "Ref.",
+                  "Supplier", "Description", "Amount (Excl. Tax)", "VAT (18%)",
+                  "Total (Incl. Tax)", "Document Hash", "Accounting Line Hash",
+                  "Secret Ledger Status", "Blockchain Transaction", "Credibility Score",
+                  "Auditor Wallet", "Audit Progress", "Audit Decision"
+                ].map((header, index) => (
+                  <th key={index} className="px-4 py-2 border-b border-gray-300 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
+                    {header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 1 }).map((_, rowIndex) => (
+                <tr key={rowIndex} className="even:bg-gray-50">
+                  {Array.from({ length: 18 }).map((_, colIndex) => (
+                    <td key={colIndex} className="px-4 py-2 border border-gray-300 whitespace-nowrap">
+                      {`Data ${rowIndex + 1}-${colIndex + 1}`}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+
+
+
+    
+    </div>
+  );
+};
+
+export default CompanyScreen;

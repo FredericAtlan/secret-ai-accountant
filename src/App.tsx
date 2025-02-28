@@ -1,19 +1,37 @@
 import React from 'react'
-import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom'
+import { BrowserRouter as Router, Route, Routes, NavLink } from 'react-router-dom'
 import CompanyScreen from './CompanyScreen'
 import AuditorScreen from './AuditorScreen'
+import logo from './assets/Secret-Ai-Acc_logo.svg'
 
 const App: React.FC = () => {
   return (
     <Router>
       <div>
-        <nav className="bg-gray-800 text-white py-4">
-          <ul className="flex justify-around">
+        <nav className="bg-gray-800 text-white py-0">
+          <ul className="flex justify-around items-center">
             <li>
-              <Link to="/" className="hover:text-gray-300">Company Screen</Link>
+              <img src={logo} alt="Logo" className="h-16 w-16 mr-0" />
             </li>
             <li>
-              <Link to="/auditor" className="hover:text-gray-300">Auditor Screen</Link>
+              <NavLink
+                to="/"
+                className={({ isActive }) =>
+                  isActive ? 'hover:text-gray-300 underline' : 'hover:text-gray-300'
+                }
+              >
+                Company Screen
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/auditor"
+                className={({ isActive }) =>
+                  isActive ? 'hover:text-gray-300 underline' : 'hover:text-gray-300'
+                }
+              >
+                Auditor Screen
+              </NavLink>
             </li>
           </ul>
         </nav>
